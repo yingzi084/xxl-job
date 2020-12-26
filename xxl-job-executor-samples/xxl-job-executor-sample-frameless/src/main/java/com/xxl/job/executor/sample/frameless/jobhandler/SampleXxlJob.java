@@ -75,7 +75,6 @@ public class SampleXxlJob {
     public void commandJobHandler() throws Exception {
         String command = XxlJobHelper.getJobParam();
         int exitValue = -1;
-        String temp = "";
 
         BufferedReader bufferedReader = null;
         try {
