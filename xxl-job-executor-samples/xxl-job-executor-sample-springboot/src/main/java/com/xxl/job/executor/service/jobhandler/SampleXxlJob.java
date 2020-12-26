@@ -5,6 +5,7 @@ import com.xxl.job.core.handler.annotation.XxlJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -28,8 +29,14 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 public class SampleXxlJob {
+
     private static Logger logger = LoggerFactory.getLogger(SampleXxlJob.class);
 
+    /** http job handler 参数所在位置 */
+    private final int HTTP_PARAM_METHOD_POSITION = 0;
+    private final int HTTP_PARAM_URL_POSITION = 1;
+    /** http job handler 参数 分割 字符 */
+    private final String HTTP_PARAM_SPLIT_CHAR = " ";
 
     /**
      * 1、简单任务示例（Bean模式）
@@ -136,21 +143,31 @@ public class SampleXxlJob {
             return;
         }
 
-        String[] httpParams = param.split("\n");
+        // 空格分隔，第一个有数据的是method，第二个有数据的是url，后面所有的数据全部拼接在一起作为data
+        String[] httpParams = param.trim().split(HTTP_PARAM_SPLIT_CHAR);
         String url = null;
         String method = null;
         String data = null;
+        StringBuilder sb = new StringBuilder();
+        // 声明现在参数的位置
+        int paramPos = 0;
         for (String httpParam: httpParams) {
-            if (httpParam.startsWith("url:")) {
-                url = httpParam.substring(httpParam.indexOf("url:") + 4).trim();
-            }
-            if (httpParam.startsWith("method:")) {
-                method = httpParam.substring(httpParam.indexOf("method:") + 7).trim().toUpperCase();
-            }
-            if (httpParam.startsWith("data:")) {
-                data = httpParam.substring(httpParam.indexOf("data:") + 5).trim();
+            if (paramPos == HTTP_PARAM_METHOD_POSITION) {
+                if (!StringUtils.isEmpty(httpParam)) {
+                    method = httpParam;
+                    paramPos++;
+                }
+            } else if (paramPos == HTTP_PARAM_URL_POSITION) {
+                if (!StringUtils.isEmpty(httpParam)) {
+                    url = httpParam;
+                    paramPos++;
+                }
+            } else {
+                // 空格分割，前面加个空格
+                sb.append(HTTP_PARAM_SPLIT_CHAR + httpParam);
             }
         }
+        data = sb.toString().trim(); // 处理两边的空格
 
         // param valid
         if (url==null || url.trim().length()==0) {
